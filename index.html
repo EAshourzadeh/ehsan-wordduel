@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EHSAN_WordDuel – SAT Vocab Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔒 Teacher Access</div>
+    <div class="modal-sub" id="pw-modal-sub">Enter the password to continue</div>
+    <input class="modal-input" id="pw-input" type="password" placeholder="Password" maxlength="32"/>
+    <div class="modal-err" id="pw-err">Incorrect password. Try again.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closePwModal()">Cancel</button>
+      <button class="modal-ok" onclick="submitPw()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cpw-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 Change Password</div>
+    <div class="modal-sub">Enter a new teacher password</div>
+    <input class="modal-input" id="cpw-old" type="password" placeholder="Current password" maxlength="32"/>
+    <input class="modal-input" id="cpw-new" type="password" placeholder="New password" maxlength="32"/>
+    <input class="modal-input" id="cpw-new2" type="password" placeholder="Confirm new password" maxlength="32"/>
+    <div class="modal-err" id="cpw-err"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeCpwModal()">Cancel</button>
+      <button class="modal-ok" onclick="submitCpw()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-delete-modal">
+  <div class="modal-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="modal-title">Delete All Words?</div>
+    <div class="modal-sub">This will permanently remove <strong id="delete-count-label">0</strong> words from the list. This cannot be undone.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeDeleteAllModal()">Cancel</button>
+      <button class="modal-danger-btn" onclick="confirmDeleteAll()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-upload-modal">
+  <div class="modal-box">
+    <div class="modal-title">⬆️ Upload Word List</div>
+    <div class="modal-sub">Upload a .txt file to replace the current word list.</div>
+    <div class="upload-format-hint">Format (one word per line):<br>word;&nbsp;&nbsp;&nbsp;&nbsp;syn;&nbsp;&nbsp;&nbsp;&nbsp;ant;<br><span style="opacity:.65">(fields separated by a TAB, semicolon after each)</span></div>
+    <label class="upload-file-label" for="upload-file-input">📄 <span id="upload-file-name">Choose .txt file…</span></label>
+    <input type="file" id="upload-file-input" accept=".txt" style="display:none" onchange="handleUploadFile(this)"/>
+    <div class="confirm-detail" id="upload-preview" style="display:none"></div>
+    <div class="modal-err" id="upload-err"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeUploadModal()">Cancel</button>
+      <button class="modal-ok" id="upload-confirm-btn" onclick="confirmUpload()" style="opacity:.4;pointer-events:none">Replace List</button>
+    </div>
+  </div>
+</div>
+
+<div id="home" class="screen active">
+  <div class="lang-selector no-i18n" aria-label="Language">
+    <button class="lang-btn" type="button" data-lang="en" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" type="button" data-lang="es" onclick="setLang('es')">Español</button>
+    <button class="lang-btn" type="button" data-lang="ru" onclick="setLang('ru')">Русский</button>
+    <button class="lang-btn" type="button" data-lang="fa" onclick="setLang('fa')">فارسی</button>
+    <button class="lang-btn" type="button" data-lang="tr" onclick="setLang('tr')">Türkçe</button>
+  </div>
+  <div class="logo-mark">⚡</div>
+  <div class="logo-title">EHSAN_WordDuel</div>
+  <div class="logo-sub">SAT Vocab · Synonyms &amp; Antonyms</div>
+
+  <div class="vocab-mode-selector">
+    <button class="vocab-mode-btn active" id="vmode-syn" onclick="setVMode('syn')">Synonyms</button>
+    <button class="vocab-mode-btn"        id="vmode-ant" onclick="setVMode('ant')">Antonyms</button>
+  </div>
+
+  <div class="home-modes">
+    <button class="mode-btn btn-mc"     onclick="startGame('mc')">
+      <span class="icon">🎯</span>
+      <span class="label"><span>Multiple Choice</span><span>Pick the right word</span></span>
+    </button>
+    <button class="mode-btn btn-match"  onclick="startGame('match')">
+      <span class="icon">🔗</span>
+      <span class="label"><span>Matching Pairs</span><span>Connect words to their matches</span></span>
+    </button>
+    <button class="mode-btn btn-fill"   onclick="startGame('fill')">
+      <span class="icon">✍️</span>
+      <span class="label"><span>Fill in the Blank</span><span>Type the answer</span></span>
+    </button>
+    <button class="mode-btn btn-streak" onclick="startGame('streak')">
+      <span class="icon">🔥</span>
+      <span class="label"><span>Streak Mode</span><span>How long can you last?</span></span>
+    </button>
+  </div>
+
+  <div class="home-bottom">
+    <div class="sound-row">
+      <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()"></div>
+      <span id="sound-label">Background music: Off</span>
+    </div>
+    <button class="leaderboard-btn-home" onclick="requirePw('leaderboard')">🏆 Leaderboard</button>
+    <button class="teacher-btn" onclick="requirePw('editor')">✏️ Edit Word List</button>
+  </div>
+    
+  <div class="qr-widget">
+    <div class="qr-label">📱 Scan to open on your phone</div>
+    <div class="qr-box" id="qr-canvas"></div>
+    <div class="qr-url">ehsan-wordduel.netlify.app</div>
+  </div>
+  <div class="footer-label">
+    Designed and developed for educational purposes by Ehsan A.
+  </div>
+  
+</div>
+
+<div id="mc" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">Multiple Choice</span>
+    <div class="score-pill">⭐ <span class="score-val" id="mc-score">0</span></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="mc-prog" style="width:0%"></div></div>
+  <div class="timer-ring-wrap">
+    <div class="timer-ring">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle class="bg" cx="28" cy="28" r="24"/>
+        <circle class="arc" id="mc-arc" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="mc-time">15</div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="burst" id="mc-burst"></div>
+    <span class="q-type-badge" id="mc-badge">SYNONYM</span>
+    <div class="q-word-row"><div class="q-word" id="mc-word">—</div><button class="tts-btn" id="mc-tts" title="Speak word" onclick="ttsSpeak(document.getElementById('mc-word').textContent, this)">🔊</button></div>
+    <div class="q-instruction" id="mc-instr"></div>
+  </div>
+  <div class="options-grid" id="mc-opts"></div>
+  <div class="feedback-bar" id="mc-fb"></div>
+  <button class="next-btn" id="mc-next" onclick="mcNext()">Next →</button>
+</div>
+
+<div id="match" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">Matching Pairs</span>
+    <div class="score-pill">⭐ <span class="score-val" id="match-score">0</span></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="match-prog" style="width:0%"></div></div>
+  <div class="timer-ring-wrap">
+    <div class="timer-ring">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle class="bg" cx="28" cy="28" r="24"/>
+        <circle class="arc" id="match-arc" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="match-time">60</div>
+    </div>
+  </div>
+  <p class="match-instructions">Tap a word on the left, then its match on the right</p>
+  <div class="match-area">
+    <div>
+      <div class="match-col-label">Words</div>
+      <div class="match-col" id="match-left"></div>
+    </div>
+    <div>
+      <div class="match-col-label">Matches</div>
+      <div class="match-col" id="match-right"></div>
+    </div>
+  </div>
+  <div class="match-progress" id="match-progress-text"></div>
+  <div class="feedback-bar" id="match-fb" style="margin-top:10px"></div>
+</div>
+
+<div id="fill" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">Fill in the Blank</span>
+    <div class="score-pill">⭐ <span class="score-val" id="fill-score">0</span></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="fill-prog" style="width:0%"></div></div>
+  <div class="timer-ring-wrap">
+    <div class="timer-ring">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle class="bg" cx="28" cy="28" r="24"/>
+        <circle class="arc" id="fill-arc" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="fill-time">20</div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="burst" id="fill-burst"></div>
+    <span class="q-type-badge" id="fill-badge">SYNONYM</span>
+    <div class="q-word-row"><div class="q-word" id="fill-word">—</div><button class="tts-btn" id="fill-tts" title="Speak word" onclick="ttsSpeak(document.getElementById('fill-word').textContent, this)">🔊</button></div>
+    <div class="q-instruction" id="fill-instr"></div>
+  </div>
+  <div class="fill-form">
+    <input class="fill-input" id="fill-input" type="text" placeholder="Your answer…" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="fill-submit" id="fill-submit" onclick="fillCheck()" style="flex:1">Check Answer</button>
+      <button class="tts-btn" id="fill-ans-tts" title="Speak your answer" style="font-size:20px;padding:6px 8px;border:2px solid var(--border);border-radius:var(--radius);display:none" onclick="ttsSpeak(document.getElementById('fill-input').value.trim()||'',this)">🔊</button>
+    </div>
+  </div>
+  <div class="feedback-bar" id="fill-fb" style="margin-top:10px"></div>
+  <button class="next-btn" id="fill-next" onclick="fillNext()" style="margin-top:10px">Next →</button>
+</div>
+
+<div id="streak" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">Streak Mode</span>
+    <div class="score-pill">🔥 <span class="score-val" id="streak-count">0</span></div>
+  </div>
+  <div class="q-card">
+    <div class="burst" id="streak-burst"></div>
+    <span class="q-type-badge" id="streak-badge">SYNONYM</span>
+    <div class="q-word-row"><div class="q-word" id="streak-word">—</div><button class="tts-btn" id="streak-tts" title="Speak word" onclick="ttsSpeak(document.getElementById('streak-word').textContent, this)">🔊</button></div>
+    <div class="q-instruction" id="streak-instr"></div>
+  </div>
+  <div class="options-grid" id="streak-opts"></div>
+  <div class="feedback-bar" id="streak-fb"></div>
+</div>
+
+<div id="results" class="screen">
+  <div class="result-icon" id="res-icon">🎉</div>
+  <div class="result-title" id="res-title">Well done!</div>
+  <div class="result-sub" id="res-sub">Here's how you did</div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-val" id="res-score">0</div><div class="stat-lbl">Score</div></div>
+    <div class="stat-box"><div class="stat-val" id="res-correct">0</div><div class="stat-lbl">Correct</div></div>
+    <div class="stat-box"><div class="stat-val red" id="res-incorrect">0</div><div class="stat-lbl">Incorrect</div></div>
+    <div class="stat-box"><div class="stat-val" id="res-streak">0</div><div class="stat-lbl">Best Streak</div></div>
+    <div class="stat-box"><div class="stat-val" id="res-acc">0%</div><div class="stat-lbl">Accuracy</div></div>
+  </div>
+  <div class="name-input-wrap">
+    <input class="name-input" id="res-name" type="text" placeholder="Your name (for leaderboard)" maxlength="24"/>
+    <button class="save-score-btn" onclick="saveScore()">💾 Save to Leaderboard</button>
+    <div class="save-toast" id="save-toast">✅ Score saved!</div>
+  </div>
+  <div class="result-actions">
+    <button class="play-again-btn" onclick="playAgain()">Play Again</button>
+    <button class="home-btn-res" onclick="goHome()">← Back to Home</button>
+  </div>
+</div>
+
+<div id="leaderboard" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title" style="font-size:16px;font-weight:900">🏆 Leaderboard</span>
+    <div></div>
+  </div>
+  <div class="lb-list" id="lb-list"></div>
+  <button class="clear-lb-btn" onclick="clearLB()">Clear All Scores</button>
+  <button class="change-pw-btn" onclick="openCpwModal()">🔑 Change Password</button>
+</div>
+
+<div id="editor" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">✏️ Edit Word List</span>
+    <div></div>
+  </div>
+  <p class="editor-note">Add, edit, or remove synonym/antonym pairs. Changes are saved in the browser and apply to all game modes.</p>
+  <div class="editor-table-wrap">
+    <table class="word-table">
+      <thead><tr><th>Word</th><th>Synonym</th><th>Antonym</th><th></th></tr></thead>
+      <tbody id="editor-body"></tbody>
+    </table>
+  </div>
+  <div class="editor-actions">
+    <button class="add-row-btn" onclick="editorAddRow()">+ Add Word</button>
+    <button class="save-words-btn" onclick="editorSave()">Save Changes</button>
+  </div>
+  <div class="editor-secondary-actions">
+    <button class="upload-btn" onclick="openUploadModal()">⬆️ Upload Word List (.txt)</button>
+    <button class="delete-all-btn" onclick="openDeleteAllModal()">🗑️ Delete All Words</button>
+  </div>
+  <div class="save-toast" id="editor-toast">✅ Word list saved!</div>
+  <button class="change-pw-btn" onclick="openCpwModal()">🔑 Change Password</button>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
