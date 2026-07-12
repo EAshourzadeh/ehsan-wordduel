@@ -223,7 +223,14 @@ const UI_TEXT = {
     "Clear all scores?": "¿Borrar todas las puntuaciones?",
     "Add, edit, or remove synonym/antonym pairs. Changes are saved in the browser and apply to all game modes.": "Añade, edita o elimina pares de sinónimos/antónimos. Los cambios se guardan en el navegador y se aplican a todos los modos de juego.",
     "Focus Mode": "Modo enfoque",
-    "Upload rejected. Fix the listed line(s) and try again.": "Carga rechazada. Corrige las líneas indicadas e inténtalo de nuevo."
+    "Upload rejected. Fix the listed line(s) and try again.": "Carga rechazada. Corrige las líneas indicadas e inténtalo de nuevo.",
+    "Unscramble": "Descifrar",
+    "Rebuild the scrambled word": "Reconstruye la palabra",
+    "💡 Hint (synonym):": "💡 Pista (sinónimo):",
+    "💡 Hint (antonym):": "💡 Pista (antónimo):",
+    "✅ Correct! +50 pts": "✅ ¡Correcto! +50 pts",
+    "Shuffle": "Mezclar",
+    "Clear": "Borrar"
   },
   "ru": {
     "Language": "Язык",
@@ -437,7 +444,14 @@ const UI_TEXT = {
     "Clear all scores?": "Очистить все результаты?",
     "Add, edit, or remove synonym/antonym pairs. Изменения сохраняются в браузере и применяются ко всем режимам игры.": "Добавляйте, редактируйте или удаляйте пары синонимов/антонимов. Изменения сохраняются в браузере и применяются ко всем режимам игры.",
     "Focus Mode": "Режим фокуса",
-    "Upload rejected. Fix the listed line(s) and try again.": "Загрузка отклонена. Исправьте указанные строки и попробуйте снова."
+    "Upload rejected. Fix the listed line(s) and try again.": "Загрузка отклонена. Исправьте указанные строки и попробуйте снова.",
+    "Unscramble": "Расшифровка",
+    "Rebuild the scrambled word": "Восстановите слово",
+    "💡 Hint (synonym):": "💡 Подсказка (синоним):",
+    "💡 Hint (antonym):": "💡 Подсказка (антоним):",
+    "✅ Correct! +50 pts": "✅ Верно! +50 оч.",
+    "Shuffle": "Перемешать",
+    "Clear": "Очистить"
   },
   "fa": {
     "Language": "زبان",
@@ -652,7 +666,14 @@ const UI_TEXT = {
     "Clear all scores?": "همه امتیازها پاک شوند؟",
     "Add, edit, or remove synonym/antonym pairs. Changes are saved in the browser and apply to all game modes.": "جفت‌های مترادف/متضاد را اضافه، ویرایش یا حذف کنید. تغییرات در مرورگر ذخیره می‌شوند و برای همه حالت‌های بازی اعمال می‌شوند.",
     "Focus Mode": "حالت تمرکز",
-    "Upload rejected. Fix the listed line(s) and try again.": "بارگذاری رد شد. خط‌های فهرست‌شده را اصلاح کنید و دوباره تلاش کنید."
+    "Upload rejected. Fix the listed line(s) and try again.": "بارگذاری رد شد. خط‌های فهرست‌شده را اصلاح کنید و دوباره تلاش کنید.",
+    "Unscramble": "مرتب‌سازی",
+    "Rebuild the scrambled word": "واژه به‌هم‌ریخته را بازسازی کنید",
+    "💡 Hint (synonym):": "💡 راهنما (مترادف):",
+    "💡 Hint (antonym):": "💡 راهنما (متضاد):",
+    "✅ Correct! +50 pts": "✅ درست! +۵۰ امتیاز",
+    "Shuffle": "برهم‌زدن",
+    "Clear": "پاک کردن"
   },
   "tr": {
     "Language": "Dil",
@@ -867,7 +888,14 @@ const UI_TEXT = {
     "Add, edit, or remove synonym/antonym pairs. Changes are saved in the browser and apply to all game modes.": "Eş/zıt anlamlı kelime çiftlerini ekleyin, düzenleyin veya silin. Değişiklikler tarayıcıda kaydedilir ve tüm oyun modlarına uygulanır.",
     "Focus Mode": "Odak Modu",
     "Upload rejected. Fix the listed line(s) and try again.": "Yükleme reddedildi. Listelenen satırları düzeltip tekrar deneyiniz.",
-    "←": "←"
+    "←": "←",
+    "Unscramble": "Şifreyi Çöz",
+    "Rebuild the scrambled word": "Karışık kelimeyi yeniden kur",
+    "💡 Hint (synonym):": "💡 İpucu (eş anlamlı):",
+    "💡 Hint (antonym):": "💡 İpucu (zıt anlamlı):",
+    "✅ Correct! +50 pts": "✅ Doğru! +50 puan",
+    "Shuffle": "Karıştır",
+    "Clear": "Temizle"
   }
 };
 const UI_SKIP_SELECTOR = '.lang-selector,.no-i18n,.q-word,.opt-word,.m-card,.card-word,.back-word,.back-def,.chip,.qr-url,.logo-title,.scr-tile';
@@ -2082,8 +2110,11 @@ function scrRevealHint(){
   const hintWord=isAnt?s.entry.ant:s.entry.syn;
   const box=document.getElementById('scr-hint-box');
   box.innerHTML='';
+  
   const label=document.createElement('span');
-  label.textContent=isAnt?'💡 Hint (antonym):':'💡 Hint (synonym):';
+  // NEW: Wrapped in t()
+  label.textContent=t(isAnt ? '💡 Hint (antonym):' : '💡 Hint (synonym):');
+  
   const val=document.createElement('span');
   val.className='no-i18n'; val.style.marginLeft='6px'; val.style.color='var(--text)'; val.style.fontWeight='800';
   val.textContent=hintWord;
@@ -2119,12 +2150,18 @@ function scrCheck(){
     if(s.streak>s.bestStreak)s.bestStreak=s.streak;
     showStreakBanner(s.streak);
     popBurst(document.getElementById('scr-burst'),'✨');
-    fb.textContent=`✅ Correct! +${pts} pts`;
+    
+    // NEW: Wrapped in t(). Matches exact dictionary key based on 50 or 100 points
+    fb.textContent=t(`✅ Correct! +${pts} pts`);
+    
     fb.className='feedback-bar show ok';
     playSfx('correct');
   } else {
     s.streak=0;
-    fb.textContent=`❌ Expected "${s.entry.word}"`;
+    
+    // NEW: Wrapped in t(). Your existing regex engine will translate this automatically!
+    fb.textContent=t(`❌ Expected "${s.entry.word}"`);
+    
     fb.className='feedback-bar show bad';
     playSfx('wrong');
   }
@@ -2138,7 +2175,10 @@ function scrTimeout(){
   s.answered=true; s.streak=0; clearTimers();
   document.querySelectorAll('#scr-answer .scr-tile:not(.slot-empty), #scr-bank .scr-tile').forEach(b=>b.disabled=true);
   const fb=document.getElementById('scr-fb');
-  fb.textContent=`⏱ Time's up! Answer: "${s.entry.word}"`;
+  
+  // NEW: Wrapped in t(). Handled automatically by your regex engine!
+  fb.textContent=t(`⏱ Time's up! Answer: "${s.entry.word}"`);
+  
   fb.className='feedback-bar show bad';
   document.getElementById('scr-next').className='next-btn show';
   document.getElementById('scr-tts-btn').style.display='block';
@@ -2169,8 +2209,11 @@ function endGame(mode){
   const icons={mc:'🎯',match:'🔗',fill:'✍️',streak:'🔥',scramble:'🔀'};
   const titles={mc:'Round Complete!',match:'All Matched!',fill:'Round Complete!',streak:'Streak Over!',scramble:'Round Complete!'};
   document.getElementById('res-icon').textContent=icons[mode]||'🎉';
-  document.getElementById('res-title').textContent=titles[mode]||'Done!';
-  document.getElementById('res-sub').textContent=mode==='streak'?`Best streak: ${s.bestStreak}`:'Here\'s how you did';
+  
+  // NEW: Wrapped in t()
+  document.getElementById('res-title').textContent=t(titles[mode]||'Done!');
+  document.getElementById('res-sub').textContent=mode==='streak' ? t(`Best streak: ${s.bestStreak}`) : t("Here's how you did");
+  
   const incorrectCount=total!==null?total-correctCount:null;
   document.getElementById('res-score').textContent=s.score;
   document.getElementById('res-correct').textContent=correctCount;
