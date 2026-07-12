@@ -100,6 +100,10 @@
       <span class="icon">🔥</span>
       <span class="label"><span>Streak Mode</span><span>How long can you last?</span></span>
     </button>
+    <button class="mode-btn btn-scramble" onclick="startGame('scramble')">
+      <span class="icon">🔀</span>
+      <span class="label"><span>Unscramble</span><span>Rebuild the scrambled word</span></span>
+    </button>
   </div>
 
   <div class="home-bottom">
@@ -227,6 +231,42 @@
   </div>
   <div class="options-grid" id="streak-opts"></div>
   <div class="feedback-bar" id="streak-fb"></div>
+</div>
+
+<div id="scramble" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="topbar-title">Unscramble</span>
+    <div class="score-pill">⭐ <span class="score-val" id="scr-score">0</span></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="scr-prog" style="width:0%"></div></div>
+  <div class="timer-ring-wrap">
+    <div class="timer-ring">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle class="bg" cx="28" cy="28" r="24"/>
+        <circle class="arc" id="scr-arc" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="scr-time">20</div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="burst" id="scr-burst"></div>
+    <span class="q-type-badge badge-word">VOCABULARY</span>
+    <div class="q-instruction">Unscramble the letters to spell the word</div>
+  </div>
+  <div class="q-card">
+    <div class="scr-answer-row" id="scr-answer"></div>
+    <div class="scr-bank" id="scr-bank"></div>
+  </div>
+  <div class="scr-controls">
+    <button class="scr-ctrl-btn" id="scr-shuffle-btn" onclick="scrShuffleBank()">🔄 Shuffle</button>
+    <button class="scr-ctrl-btn" id="scr-clear-btn" onclick="scrClearAnswer()">↺ Clear</button>
+    <button class="scr-ctrl-btn" id="scr-hint-btn" onclick="scrRevealHint()">💡 Hint</button>
+    <button class="scr-ctrl-btn" id="scr-tts-btn" style="display:none" onclick="ttsSpeak(gameState.entry?gameState.entry.word:'',this)">🔊 Pronounce</button>
+  </div>
+  <div class="scr-hint-box" id="scr-hint-box"></div>
+  <div class="feedback-bar" id="scr-fb"></div>
+  <button class="next-btn" id="scr-next" onclick="scrNext()">Next →</button>
 </div>
 
 <div id="results" class="screen">

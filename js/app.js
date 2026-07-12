@@ -870,7 +870,7 @@ const UI_TEXT = {
     "←": "←"
   }
 };
-const UI_SKIP_SELECTOR = '.lang-selector,.no-i18n,.q-word,.opt-word,.m-card,.card-word,.back-word,.back-def,.chip,.qr-url,.logo-title';
+const UI_SKIP_SELECTOR = '.lang-selector,.no-i18n,.q-word,.opt-word,.m-card,.card-word,.back-word,.back-def,.chip,.qr-url,.logo-title,.scr-tile';
 let currentUiLang = localStorage.getItem(UI_LANG_KEY) || 'en';
 let i18nApplying = false;
 let i18nDebounce = null;
@@ -1592,6 +1592,7 @@ function startGame(mode){
   else if(mode==='match') startMatch();
   else if(mode==='fill') startFill();
   else if(mode==='streak') startStreak();
+  else if(mode==='scramble') startScramble();
 }
 
 function startMC(){
@@ -1949,16 +1950,224 @@ function streakAnswer(btn,opt,q){
 }
 
 /* ══════════════════════════════════════════════
+   MODE: UNSCRAMBLE
+══════════════════════════════════════════════ */
+const SCR_TOTAL=12;
+
+function scrBuildTiles(word){
+  const tiles={}; const ids=[];
+  word.split('').forEach((ch,i)=>{
+    const id='st'+i+'_'+Math.random().toString(36).slice(2,8);
+    tiles[id]={ch,used:false}; ids.push(id);
+  });
+  let bankOrder=shuffle(ids);
+  const origSeq=word.toLowerCase();
+  let tries=0;
+  while(ids.length>1 && bankOrder.map(id=>tiles[id].ch).join('').toLowerCase()===origSeq && tries<15){
+    bankOrder=shuffle(ids); tries++;
+  }
+  return {tiles,bankOrder,answer:[]};
+}
+
+function startScramble(){
+  const pool=shuffle(words.filter(w=>w.word && w.word.trim().length>=3)).slice(0,SCR_TOTAL);
+  gameState={pool,idx:0,score:0,correct:0,bestStreak:0,streak:0,answered:false};
+  showScreen('scramble'); scrRender();
+}
+
+function scrRender(){
+  const s=gameState;
+  if(s.idx>=s.pool.length){endGame('scramble');return;}
+  s.answered=false; s.hintUsed=false;
+  const entry=s.pool[s.idx]; s.entry=entry;
+  s.canHint=!!(vocabMode==='ant'?entry.ant:entry.syn);
+  s.scr=scrBuildTiles(entry.word);
+  document.getElementById('scr-prog').style.width=`${(s.idx/SCR_TOTAL)*100}%`;
+  document.getElementById('scr-score').textContent=s.score;
+  document.getElementById('scr-hint-box').textContent='';
+  document.getElementById('scr-fb').className='feedback-bar';
+  document.getElementById('scr-next').className='next-btn';
+  document.getElementById('scr-tts-btn').style.display='none';
+  scrRenderTiles();
+  const secs=Math.max(16,Math.min(34,entry.word.length*2+4));
+  clearTimers(); scrTimer(secs);
+}
+
+function scrRenderTiles(){
+  const s=gameState.scr;
+  const answerEl=document.getElementById('scr-answer');
+  const bankEl=document.getElementById('scr-bank');
+  answerEl.innerHTML=''; bankEl.innerHTML='';
+  s.answer.forEach(id=>{
+    const tile=s.tiles[id];
+    const b=document.createElement('button');
+    b.className='scr-tile'; b.type='button'; b.textContent=tile.ch;
+    b.onclick=()=>scrRemoveTile(id);
+    answerEl.appendChild(b);
+  });
+  const remaining=Object.keys(s.tiles).length-s.answer.length;
+  for(let i=0;i<remaining;i++){
+    const slot=document.createElement('div');
+    slot.className='scr-tile slot-empty';
+    answerEl.appendChild(slot);
+  }
+  s.bankOrder.forEach(id=>{
+    const tile=s.tiles[id];
+    if(tile.used)return;
+    const b=document.createElement('button');
+    b.className='scr-tile'; b.type='button'; b.textContent=tile.ch;
+    b.onclick=()=>scrPlaceTile(id);
+    bankEl.appendChild(b);
+  });
+  scrUpdateControls();
+}
+
+function scrUpdateControls(){
+  const s=gameState;
+  const answered=s.answered;
+  const hasAnswer=!!(s.scr && s.scr.answer.length);
+  document.getElementById('scr-shuffle-btn').disabled=answered;
+  document.getElementById('scr-clear-btn').disabled=answered||!hasAnswer;
+  document.getElementById('scr-hint-btn').disabled=answered||s.hintUsed||!s.canHint;
+}
+
+function scrPlaceTile(id){
+  const s=gameState; if(s.answered)return;
+  const tile=s.scr.tiles[id]; if(!tile||tile.used)return;
+  tile.used=true; s.scr.answer.push(id);
+  playSfx('click');
+  scrRenderTiles();
+  if(s.scr.answer.length===Object.keys(s.scr.tiles).length) scrCheck();
+}
+
+function scrPlaceLetter(letter){
+  const s=gameState; if(!s||s.answered||!s.scr)return;
+  const id=s.scr.bankOrder.find(id=>!s.scr.tiles[id].used && s.scr.tiles[id].ch.toLowerCase()===letter);
+  if(id) scrPlaceTile(id);
+}
+
+function scrRemoveTile(id){
+  const s=gameState; if(s.answered)return;
+  const idx=s.scr.answer.indexOf(id); if(idx===-1)return;
+  s.scr.answer.splice(idx,1);
+  s.scr.tiles[id].used=false;
+  playSfx('click');
+  scrRenderTiles();
+}
+
+function scrRemoveLast(){
+  const s=gameState; if(!s||s.answered||!s.scr||!s.scr.answer.length)return;
+  scrRemoveTile(s.scr.answer[s.scr.answer.length-1]);
+}
+
+function scrClearAnswer(){
+  const s=gameState; if(!s||s.answered||!s.scr||!s.scr.answer.length)return;
+  s.scr.answer.forEach(id=>s.scr.tiles[id].used=false);
+  s.scr.answer=[];
+  playSfx('click');
+  scrRenderTiles();
+}
+
+function scrShuffleBank(){
+  const s=gameState; if(!s||s.answered||!s.scr)return;
+  s.scr.bankOrder=shuffle(s.scr.bankOrder);
+  playSfx('click');
+  scrRenderTiles();
+}
+
+function scrRevealHint(){
+  const s=gameState; if(!s||s.answered||s.hintUsed||!s.canHint)return;
+  s.hintUsed=true;
+  const isAnt=vocabMode==='ant';
+  const hintWord=isAnt?s.entry.ant:s.entry.syn;
+  const box=document.getElementById('scr-hint-box');
+  box.innerHTML='';
+  const label=document.createElement('span');
+  label.textContent=isAnt?'💡 Hint (antonym):':'💡 Hint (synonym):';
+  const val=document.createElement('span');
+  val.className='no-i18n'; val.style.marginLeft='6px'; val.style.color='var(--text)'; val.style.fontWeight='800';
+  val.textContent=hintWord;
+  box.appendChild(label); box.appendChild(val);
+  playSfx('click');
+  scrUpdateControls();
+}
+
+function scrTimer(secs){
+  let t=secs;
+  const arc=document.getElementById('scr-arc'),num=document.getElementById('scr-time'),total=150.8;
+  arc.style.stroke='var(--cyan)'; num.style.color='var(--cyan)'; num.textContent=t;
+  const id=setInterval(()=>{
+    if(gameState.answered){clearInterval(id);return;}
+    t--; arc.style.strokeDashoffset=total*(1-t/secs); num.textContent=t;
+    if(t<=5){arc.style.stroke='var(--red)';num.style.color='var(--red)';}
+    if(t<=0){clearInterval(id); if(!gameState.answered) scrTimeout();}
+  },1000);
+  timers=[id];
+}
+
+function scrCheck(){
+  const s=gameState; if(s.answered)return;
+  s.answered=true; clearTimers();
+  const seq=s.scr.answer.map(id=>s.scr.tiles[id].ch).join('').toLowerCase();
+  const ok=seq===s.entry.word.toLowerCase();
+  document.querySelectorAll('#scr-answer .scr-tile:not(.slot-empty)').forEach(b=>{b.disabled=true;b.classList.add(ok?'correct':'wrong');});
+  document.querySelectorAll('#scr-bank .scr-tile').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('scr-fb');
+  if(ok){
+    const pts=s.hintUsed?50:100;
+    s.score+=pts; s.correct++; s.streak++;
+    if(s.streak>s.bestStreak)s.bestStreak=s.streak;
+    showStreakBanner(s.streak);
+    popBurst(document.getElementById('scr-burst'),'✨');
+    fb.textContent=`✅ Correct! +${pts} pts`;
+    fb.className='feedback-bar show ok';
+    playSfx('correct');
+  } else {
+    s.streak=0;
+    fb.textContent=`❌ Expected "${s.entry.word}"`;
+    fb.className='feedback-bar show bad';
+    playSfx('wrong');
+  }
+  document.getElementById('scr-next').className='next-btn show';
+  document.getElementById('scr-tts-btn').style.display='block';
+  scrUpdateControls();
+}
+
+function scrTimeout(){
+  const s=gameState; if(s.answered)return;
+  s.answered=true; s.streak=0; clearTimers();
+  document.querySelectorAll('#scr-answer .scr-tile:not(.slot-empty), #scr-bank .scr-tile').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('scr-fb');
+  fb.textContent=`⏱ Time's up! Answer: "${s.entry.word}"`;
+  fb.className='feedback-bar show bad';
+  document.getElementById('scr-next').className='next-btn show';
+  document.getElementById('scr-tts-btn').style.display='block';
+  playSfx('timeout');
+  scrUpdateControls();
+}
+
+function scrNext(){ gameState.idx++; scrRender(); playSfx('click'); }
+
+document.addEventListener('keydown', (e)=>{
+  if(currentMode!=='scramble')return;
+  const scr=document.getElementById('scramble');
+  if(!scr||!scr.classList.contains('active'))return;
+  const s=gameState; if(!s||s.answered)return;
+  if(e.key==='Backspace'){ e.preventDefault(); scrRemoveLast(); return; }
+  if(/^[a-zA-Z]$/.test(e.key)) scrPlaceLetter(e.key.toLowerCase());
+});
+
+/* ══════════════════════════════════════════════
    END GAME
 ══════════════════════════════════════════════ */
 function endGame(mode){
   clearTimers(); playSfx('complete');
   const s=gameState;
-  const total=mode==='mc'?MC_TOTAL:mode==='fill'?FILL_TOTAL:mode==='match'?s.totalPairs:null;
+  const total=mode==='mc'?MC_TOTAL:mode==='fill'?FILL_TOTAL:mode==='match'?s.totalPairs:mode==='scramble'?SCR_TOTAL:null;
   const correctCount=s.correct??s.matched??s.bestStreak??0;
   const acc=total?Math.round((correctCount/total)*100):null;
-  const icons={mc:'🎯',match:'🔗',fill:'✍️',streak:'🔥'};
-  const titles={mc:'Round Complete!',match:'All Matched!',fill:'Round Complete!',streak:'Streak Over!'};
+  const icons={mc:'🎯',match:'🔗',fill:'✍️',streak:'🔥',scramble:'🔀'};
+  const titles={mc:'Round Complete!',match:'All Matched!',fill:'Round Complete!',streak:'Streak Over!',scramble:'Round Complete!'};
   document.getElementById('res-icon').textContent=icons[mode]||'🎉';
   document.getElementById('res-title').textContent=titles[mode]||'Done!';
   document.getElementById('res-sub').textContent=mode==='streak'?`Best streak: ${s.bestStreak}`:'Here\'s how you did';
@@ -1996,7 +2205,7 @@ function renderLB(){
   const lb=getLB();
   const list=document.getElementById('lb-list');
   if(!lb.length){list.innerHTML='<div class="lb-empty">No scores yet. Play a round!</div>';return;}
-  const ml={mc:'Multiple Choice',match:'Matching',fill:'Fill in Blank',streak:'Streak'};
+  const ml={mc:'Multiple Choice',match:'Matching',fill:'Fill in Blank',streak:'Streak',scramble:'Unscramble'};
   list.innerHTML=lb.map((e,i)=>{
     const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
