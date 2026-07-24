@@ -1252,7 +1252,7 @@ document.getElementById('pw-input').addEventListener('keydown',e=>{ if(e.key==='
     const el = document.getElementById('qr-canvas');
     if(!el || typeof QRCode === 'undefined'){ setTimeout(tryQR, 100); return; }
     new QRCode(el, {
-      text: 'https://ehsan-wordduel.netlify.app/',
+      text: 'https://ehsan-wordduel.learninglabs.workers.dev/',
       width: 128, height: 128,
       colorDark: '#1a1a2e', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
