@@ -262,20 +262,6 @@ You can also simply open `index.html` directly in your browser.
 
 ---
 
-# 💾 Data Storage
-
-WordDuel stores all data locally using the browser's Local Storage.
-
-This includes:
-
-- Vocabulary database
-- Leaderboard
-- Teacher preferences
-- Language settings
-- Music preferences
-- Game settings
-
-No user accounts or external database are required.
 
 ---
 
