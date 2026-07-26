@@ -10,6 +10,21 @@
 </head>
 <body>
 
+<div class="modal-overlay" id="help-modal">
+  <div class="modal-box">
+    <div class="modal-title">❓ How to Play</div>
+    <div class="help-list">
+      <div class="help-item"><span class="hi">🎯</span><div><strong>Multiple Choice</strong> — choose the word that matches the requested synonym or antonym.</div></div>
+      <div class="help-item"><span class="hi">🔗</span><div><strong>Matching Pairs</strong> — connect each word with its correct match.</div></div>
+      <div class="help-item"><span class="hi">✍️</span><div><strong>Fill in the Blank</strong> — type the missing word before time runs out.</div></div>
+      <div class="help-item"><span class="hi">🔥</span><div><strong>Streak Mode</strong> — keep answering correctly and build your longest streak.</div></div>
+      <div class="help-item"><span class="hi">🔀</span><div><strong>Unscramble</strong> — rearrange the letters to rebuild the vocabulary word.</div></div>
+      <div class="help-item"><span class="hi">🔊</span><div><strong>Pronunciation</strong> — use the speaker button to hear a word aloud.</div></div>
+    </div>
+    <button class="help-close" onclick="closeHelpModal()">Got it!</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirm-delete-modal">
   <div class="modal-box">
     <div class="confirm-icon">⚠️</div>
@@ -83,8 +98,9 @@
       <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()"></div>
       <span id="sound-label">Background music: Off</span>
     </div>
-    <button class="leaderboard-btn-home" onclick="requirePw('leaderboard')">🏆 Leaderboard</button>
-    <button class="teacher-btn" onclick="requirePw('editor')">✏️ Edit Word List</button>
+    <button class="qr-trigger" onclick="openHelpModal()">❓ How to Play</button>
+    <button class="leaderboard-btn-home" onclick="showScreen('leaderboard')">🏆 Leaderboard</button>
+    <button class="teacher-btn" id="teacher-editor-btn" onclick="requirePw('editor')" hidden>✏️ Edit Word List</button>
   </div>
     
   <div class="qr-widget">
@@ -270,7 +286,7 @@
     <div></div>
   </div>
   <div class="lb-list" id="lb-list"></div>
-  <button class="clear-lb-btn" onclick="clearLB()">Clear All Scores</button>
+  <button class="clear-lb-btn" id="clear-lb-btn" onclick="clearLB()" hidden>Clear All Scores</button>
 </div>
 
 <div id="editor" class="screen">
