@@ -1214,38 +1214,6 @@ const DEFAULT_WORDS=[
   {word:"Zealous",    syn:"Fervent",      ant:"Apathetic"},
 ];
 
-/* ══════════════════════════════════════════════
-   PASSWORD SYSTEM
-══════════════════════════════════════════════ */
-const DEFAULT_PW = 'Ehsan2026';
-function getPw(){ return localStorage.getItem('teacherPw')||DEFAULT_PW; }
-function setPw(p){ localStorage.setItem('teacherPw',p); }
-
-let pwTarget='';
-function requirePw(target){
-  pwTarget=target;
-  document.getElementById('pw-modal-sub').textContent=
-    target==='leaderboard'?'Enter the teacher password to view the leaderboard':'Enter the teacher password to edit the word list';
-  document.getElementById('pw-input').value='';
-  document.getElementById('pw-input').className='modal-input';
-  document.getElementById('pw-err').className='modal-err';
-  document.getElementById('pw-modal').className='modal-overlay show';
-  setTimeout(()=>document.getElementById('pw-input').focus(),100);
-}
-function closePwModal(){ document.getElementById('pw-modal').className='modal-overlay'; }
-function submitPw(){
-  const val=document.getElementById('pw-input').value;
-  if(val===getPw()){
-    closePwModal();
-    showScreen(pwTarget);
-  } else {
-    document.getElementById('pw-input').className='modal-input err';
-    document.getElementById('pw-err').className='modal-err show';
-    playSfx('wrong');
-  }
-}
-document.getElementById('pw-input').addEventListener('keydown',e=>{ if(e.key==='Enter') submitPw(); });
-
 // Generate QR code for home screen
 (function(){
   function tryQR(){
@@ -1260,26 +1228,6 @@ document.getElementById('pw-input').addEventListener('keydown',e=>{ if(e.key==='
   }
   tryQR();
 })();
-
-function openCpwModal(){
-  ['cpw-old','cpw-new','cpw-new2'].forEach(id=>{ document.getElementById(id).value=''; document.getElementById(id).className='modal-input'; });
-  document.getElementById('cpw-err').className='modal-err';
-  document.getElementById('cpw-modal').className='modal-overlay show';
-  setTimeout(()=>document.getElementById('cpw-old').focus(),100);
-}
-function closeCpwModal(){ document.getElementById('cpw-modal').className='modal-overlay'; }
-function submitCpw(){
-  const old=document.getElementById('cpw-old').value;
-  const n1=document.getElementById('cpw-new').value;
-  const n2=document.getElementById('cpw-new2').value;
-  const err=document.getElementById('cpw-err');
-  if(old!==getPw()){ err.textContent='Current password is incorrect.'; err.className='modal-err show'; return; }
-  if(n1.length<4){ err.textContent='New password must be at least 4 characters.'; err.className='modal-err show'; return; }
-  if(n1!==n2){ err.textContent='New passwords do not match.'; err.className='modal-err show'; return; }
-  setPw(n1);
-  closeCpwModal();
-  alert('✅ Password changed successfully!');
-}
 
 /* ══════════════════════════════════════════════
    AUDIO ENGINE (Web Audio API — clean sine pads)
@@ -2292,10 +2240,11 @@ function editorAddRow(){
 }
 function editorSave(){
   const rows=document.querySelectorAll('#editor-body tr'); const d=[];
+  const definitions=new Map(words.map(item=>[String(item.word||'').trim().toLowerCase(),item.def||'']));
   rows.forEach(row=>{
     const ins=row.querySelectorAll('input');
     const word=ins[0].value.trim(),syn=ins[1].value.trim(),ant=ins[2].value.trim();
-    if(word)d.push({word,syn,ant});
+    if(word)d.push({word,syn,ant,def:definitions.get(word.toLowerCase())||''});
   });
   saveWords(d);
   document.getElementById('editor-toast').className='save-toast show';
@@ -2392,7 +2341,7 @@ function handleUploadFile(input){
   document.getElementById('upload-file-name').textContent=file.name;
   const reader=new FileReader();
   reader.onload=(e)=>{
-    const {results,errors,totalLines}=parseWordTxt(e.target.result,3);
+    const {results,errors,totalLines}=parseWordTxt(e.target.result,4);
     const preview=document.getElementById('upload-preview');
     const btn=document.getElementById('upload-confirm-btn');
     preview.style.display='none';
@@ -2432,6 +2381,26 @@ function confirmUpload(){
   pendingUploadWords=null;
   closeUploadModal();
   renderEditor();
+  playSfx('correct');
+}
+
+function exportWordList(){
+  const clean = value => String(value || '')
+    .replace(/[\t\r\n]+/g, ' ')
+    .replace(/;/g, ',')
+    .trim();
+  const lines = loadWords().map(item =>
+    `${clean(item.word)};\t${clean(item.syn)};\t${clean(item.ant)};\t${clean(item.def)};`
+  );
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type:'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'EHSAN_WordDuel_WordList.txt';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
   playSfx('correct');
 }
 
