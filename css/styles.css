@@ -41,6 +41,14 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 .teacher-btn{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
 .teacher-btn:hover{color:var(--text)}
 
+#help-modal .modal-box{max-width:440px;gap:14px;text-align:left}
+#help-modal .modal-title{text-align:center}
+.help-list{display:flex;flex-direction:column;gap:10px;width:100%}
+.help-item{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:#c8d5e2;line-height:1.55}
+.help-item .hi{font-size:18px;flex-shrink:0;margin-top:1px}
+.help-item strong{color:var(--text)}
+.help-close{width:100%;padding:13px;border-radius:var(--radius);background:linear-gradient(135deg,var(--violet),var(--violet2));font-size:14px;font-weight:800;color:#fff}
+
 /* SOUND TOGGLE */
 .sound-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
 .sound-toggle{position:relative;width:42px;height:24px;background:var(--border);border-radius:50px;cursor:pointer;transition:background .2s;flex-shrink:0}
