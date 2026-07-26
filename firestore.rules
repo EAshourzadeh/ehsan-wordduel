@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "teacher";
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == "student";
+      allow read: if signedIn() && (request.auth.uid == userId || isTeacher());
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role;
+      allow update, delete: if isTeacher();
+    }
+
+    match /appData/vocabulary {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /scores/{scoreId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isTeacher();
+    }
+  }
+}

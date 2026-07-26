@@ -10,34 +10,6 @@
 </head>
 <body>
 
-<div class="modal-overlay" id="pw-modal">
-  <div class="modal-box">
-    <div class="modal-title">🔒 Teacher Access</div>
-    <div class="modal-sub" id="pw-modal-sub">Enter the password to continue</div>
-    <input class="modal-input" id="pw-input" type="password" placeholder="Password" maxlength="32"/>
-    <div class="modal-err" id="pw-err">Incorrect password. Try again.</div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closePwModal()">Cancel</button>
-      <button class="modal-ok" onclick="submitPw()">Enter</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="cpw-modal">
-  <div class="modal-box">
-    <div class="modal-title">🔑 Change Password</div>
-    <div class="modal-sub">Enter a new teacher password</div>
-    <input class="modal-input" id="cpw-old" type="password" placeholder="Current password" maxlength="32"/>
-    <input class="modal-input" id="cpw-new" type="password" placeholder="New password" maxlength="32"/>
-    <input class="modal-input" id="cpw-new2" type="password" placeholder="Confirm new password" maxlength="32"/>
-    <div class="modal-err" id="cpw-err"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeCpwModal()">Cancel</button>
-      <button class="modal-ok" onclick="submitCpw()">Save</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="confirm-delete-modal">
   <div class="modal-box">
     <div class="confirm-icon">⚠️</div>
@@ -54,7 +26,7 @@
   <div class="modal-box">
     <div class="modal-title">⬆️ Upload Word List</div>
     <div class="modal-sub">Upload a .txt file to replace the current word list.</div>
-    <div class="upload-format-hint">Format (one word per line):<br>word;&nbsp;&nbsp;&nbsp;&nbsp;syn;&nbsp;&nbsp;&nbsp;&nbsp;ant;<br><span style="opacity:.65">(fields separated by a TAB, semicolon after each)</span></div>
+    <div class="upload-format-hint">Format (one word per line):<br>word;&nbsp;&nbsp;&nbsp;&nbsp;syn;&nbsp;&nbsp;&nbsp;&nbsp;ant;&nbsp;&nbsp;&nbsp;&nbsp;def;<br><span style="opacity:.65">(fields separated by a TAB, semicolon after each; definition may be blank)</span></div>
     <label class="upload-file-label" for="upload-file-input">📄 <span id="upload-file-name">Choose .txt file…</span></label>
     <input type="file" id="upload-file-input" accept=".txt" style="display:none" onchange="handleUploadFile(this)"/>
     <div class="confirm-detail" id="upload-preview" style="display:none"></div>
@@ -299,7 +271,6 @@
   </div>
   <div class="lb-list" id="lb-list"></div>
   <button class="clear-lb-btn" onclick="clearLB()">Clear All Scores</button>
-  <button class="change-pw-btn" onclick="openCpwModal()">🔑 Change Password</button>
 </div>
 
 <div id="editor" class="screen">
@@ -321,10 +292,10 @@
   </div>
   <div class="editor-secondary-actions">
     <button class="upload-btn" onclick="openUploadModal()">⬆️ Upload Word List (.txt)</button>
+    <button class="upload-btn" onclick="exportWordList()">⬇️ Export Word List (.txt)</button>
     <button class="delete-all-btn" onclick="openDeleteAllModal()">🗑️ Delete All Words</button>
   </div>
   <div class="save-toast" id="editor-toast">✅ Word list saved!</div>
-  <button class="change-pw-btn" onclick="openCpwModal()">🔑 Change Password</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -333,5 +304,6 @@
 <script src="js/firebase-init.js"></script>
 <script src="js/app.js"></script>
 <script src="js/cloud-sync.js"></script>
+<script src="js/access-portal.js"></script>
 </body>
 </html>
