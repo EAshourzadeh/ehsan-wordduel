@@ -105,6 +105,10 @@
     document.getElementById("access-error").textContent = "";
     hidePortal();
     forceSignInMode();
+    document.getElementById("cloud-auth-form").reset();
+    document.getElementById("cloud-email").value = "";
+    document.getElementById("cloud-password").value = "";
+    document.getElementById("cloud-name").value = "";
     document.getElementById("cloud-auth-title").textContent = path === "teacher" ? "Teacher sign in" : "Student sign in";
     document.getElementById("cloud-auth-subtitle").textContent = path === "teacher"
       ? "Use the Firebase account that has the teacher role."
@@ -143,12 +147,7 @@
         if (pendingTeacherTarget) {
           const target = pendingTeacherTarget;
           pendingTeacherTarget = "";
-          if (target === "leaderboard") {
-            showScreen("leaderboard");
-            renderLB();
-          } else {
-            showScreen("editor");
-          }
+          showScreen("editor");
         }
       } catch (error) {
         document.getElementById("access-error").textContent = "Teacher permission could not be verified.";

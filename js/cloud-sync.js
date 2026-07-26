@@ -102,9 +102,17 @@
   }
 
   function openAuth() {
+    clearAuthFields();
     document.getElementById("cloud-auth-error").textContent = "";
     document.getElementById("cloud-auth").classList.add("show");
     setTimeout(() => document.getElementById("cloud-email").focus(), 50);
+  }
+
+  function clearAuthFields() {
+    document.getElementById("cloud-auth-form").reset();
+    document.getElementById("cloud-email").value = "";
+    document.getElementById("cloud-password").value = "";
+    document.getElementById("cloud-name").value = "";
   }
 
   function closeAuth() {
@@ -197,6 +205,10 @@
       signin.hidden = true;
       signout.hidden = false;
     }
+    const teacherEditor = document.getElementById("teacher-editor-btn");
+    const clearScores = document.getElementById("clear-lb-btn");
+    if (teacherEditor) teacherEditor.hidden = !isTeacher();
+    if (clearScores) clearScores.hidden = !isTeacher();
   }
 
   async function loadCloudVocabulary() {
@@ -232,9 +244,12 @@
 
   const originalRequirePw = window.requirePw;
   window.requirePw = function (target) {
+    if (target === "leaderboard") {
+      showScreen("leaderboard");
+      return;
+    }
     if (isTeacher()) {
-      if (target === "leaderboard") { showScreen("leaderboard"); renderLB(); }
-      else showScreen("editor");
+      showScreen("editor");
       return;
     }
     if (state.user) {

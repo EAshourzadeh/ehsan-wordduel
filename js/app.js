@@ -1524,6 +1524,8 @@ function showScreen(id){
   if(id==='editor'){ words=loadWords(); renderEditor(); }
 }
 function goHome(){ clearTimers(); showScreen('home'); }
+function openHelpModal(){ document.getElementById('help-modal').classList.add('show'); }
+function closeHelpModal(){ document.getElementById('help-modal').classList.remove('show'); }
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
