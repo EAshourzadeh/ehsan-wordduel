@@ -40,6 +40,8 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 .leaderboard-btn-home:hover{border-color:var(--violet2);color:var(--violet2)}
 .teacher-btn{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
 .teacher-btn:hover{color:var(--text)}
+.qr-trigger{background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:700;padding:8px 16px;border-radius:var(--radius);display:flex;align-items:center;gap:6px;transition:border-color .2s,color .2s}
+.qr-trigger:hover{border-color:var(--cyan);color:var(--cyan)}
 
 #help-modal .modal-box{max-width:440px;gap:14px;text-align:left}
 #help-modal .modal-title{text-align:center}
