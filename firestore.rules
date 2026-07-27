@@ -21,6 +21,11 @@ service cloud.firestore {
       allow update, delete: if isTeacher();
     }
 
+    match /removedUsers/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isTeacher());
+      allow list, create, update, delete: if isTeacher();
+    }
+
     match /appData/vocabulary {
       allow read: if true;
       allow write: if isTeacher();
