@@ -173,6 +173,12 @@
     state.profile = null;
     if (user) {
       try {
+        const removed = await firestoreDb.collection("removedUsers").doc(user.uid).get();
+        if (removed.exists) {
+          message("This student account no longer has access. Contact your teacher.", true);
+          await firebaseAuth.signOut();
+          return;
+        }
         const ref = firestoreDb.collection("users").doc(user.uid);
         const snapshot = await ref.get();
         if (snapshot.exists) {
@@ -206,8 +212,10 @@
       signout.hidden = false;
     }
     const teacherEditor = document.getElementById("teacher-editor-btn");
+    const teacherUsers = document.getElementById("teacher-users-btn");
     const clearScores = document.getElementById("clear-lb-btn");
     if (teacherEditor) teacherEditor.hidden = !isTeacher();
+    if (teacherUsers) teacherUsers.hidden = !isTeacher();
     if (clearScores) clearScores.hidden = !isTeacher();
   }
 
