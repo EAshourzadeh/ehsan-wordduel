@@ -63,6 +63,7 @@
     document.getElementById("access-guest").addEventListener("click", () => {
       intendedPath = "guest";
       sessionStorage.setItem(ACCESS_KEY, intendedPath);
+      window.setWordDuelAudience("guest");
       hidePortal();
     });
 
@@ -129,6 +130,7 @@
 
   async function verifyPath(user) {
     if (!user) {
+      window.setWordDuelAudience("guest");
       if (intendedPath !== "guest") showPortal();
       return;
     }
@@ -144,6 +146,7 @@
           return;
         }
         hidePortal();
+        window.setWordDuelAudience("teacher");
         if (pendingTeacherTarget) {
           const target = pendingTeacherTarget;
           pendingTeacherTarget = "";
@@ -156,6 +159,7 @@
     } else {
       intendedPath = "student";
       sessionStorage.setItem(ACCESS_KEY, intendedPath);
+      window.setWordDuelAudience("student");
       hidePortal();
     }
   }

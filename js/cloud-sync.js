@@ -4,7 +4,9 @@
   "use strict";
 
   const state = { user: null, profile: null, online: navigator.onLine };
-  const vocabularyRef = firestoreDb.collection("appData").doc("vocabulary");
+  const vocabularyRef = difficulty => firestoreDb.collection("vocabulary").doc(difficulty);
+  const legacyVocabularyRef = firestoreDb.collection("appData").doc("vocabulary");
+  const difficulties = ["guest", "easy", "medium", "hard"];
   let authMode = "signin";
   let vocabularyReady = false;
 
@@ -192,8 +194,10 @@
         state.profile = { displayName: user.displayName || user.email || "Student", role: "student" };
         message("Signed in; cloud profile is temporarily unavailable.", true);
       }
-      await loadCloudVocabulary();
+      window.setWordDuelAudience(isTeacher() ? "teacher" : "student");
     }
+    if (!user) window.setWordDuelAudience("guest");
+    await loadCloudVocabulary();
     renderAccount();
   }
 
@@ -221,28 +225,45 @@
 
   async function loadCloudVocabulary() {
     try {
-      const snapshot = await vocabularyRef.get();
-      const data = snapshot.exists ? snapshot.data() : null;
-      if (data && Array.isArray(data.words) && data.words.length) {
-        localStorage.setItem("wordlist", JSON.stringify(data.words));
-        words = loadWords();
-        vocabularyReady = true;
-        message("Cloud vocabulary synchronized.");
+      const requested = state.user ? difficulties : ["guest"];
+      const snapshots = await Promise.all(requested.map(difficulty => vocabularyRef(difficulty).get()));
+      let legacyData = null;
+      const missingGuest = !snapshots[requested.indexOf("guest")].exists;
+      const mediumIndex = requested.indexOf("medium");
+      const missingMedium = mediumIndex >= 0 && !snapshots[mediumIndex].exists;
+      if (missingGuest || missingMedium) {
+        const legacy = await legacyVocabularyRef.get();
+        legacyData = legacy.exists ? legacy.data() : null;
       }
+      snapshots.forEach((snapshot, index) => {
+        const difficulty = requested[index];
+        const data = snapshot.exists ? snapshot.data() : null;
+        const fallback = (difficulty === "guest" || difficulty === "medium") ? legacyData : null;
+        const source = data || fallback;
+        if (source && Array.isArray(source.words)) {
+          localStorage.setItem("wordlist:" + difficulty, JSON.stringify(source.words));
+        }
+      });
+      words = loadWords(window.getCurrentDifficulty());
+      vocabularyReady = true;
+      if (document.getElementById("editor").classList.contains("active")) renderEditor();
+      if (snapshots.some(snapshot => snapshot.exists) || legacyData) message("Cloud vocabulary synchronized.");
     } catch (err) {
       message("Using the saved local vocabulary.", true);
     }
   }
 
   const originalSaveWords = window.saveWords;
-  window.saveWords = function (list) {
-    originalSaveWords(list);
+  window.saveWords = function (list, difficulty) {
+    const selected = difficulties.includes(difficulty) ? difficulty : window.getCurrentDifficulty();
+    originalSaveWords(list, selected);
     if (isTeacher()) {
-      vocabularyRef.set({
+      vocabularyRef(selected).set({
+        difficulty: selected,
         words: list,
         updatedAt: serverTime(),
         updatedBy: state.user.uid,
-        schemaVersion: 1
+        schemaVersion: 2
       }).then(() => message("Vocabulary saved locally and to Firebase."))
         .catch(() => message("Saved locally; cloud update failed.", true));
     } else if (state.user && vocabularyReady) {
@@ -279,6 +300,7 @@
       name,
       score: Number(gameState.score) || 0,
       mode: gameState._mode || currentMode || "",
+      difficulty: gameState._difficulty || window.getCurrentDifficulty(),
       accuracy: gameState._acc == null ? null : Number(gameState._acc),
       createdAt: serverTime()
     }).then(() => message("Score saved to your account."))

@@ -1501,13 +1501,71 @@ function playSfx(type){
 /* ══════════════════════════════════════════════
    STATE & UTILITIES
 ══════════════════════════════════════════════ */
-let words=loadWords();
+const WORD_DIFFICULTIES=['guest','easy','medium','hard'];
+const STUDENT_DIFFICULTIES=['easy','medium','hard'];
+const DIFFICULTY_LABELS={guest:'Guest Default',easy:'Easy',medium:'Medium',hard:'Hard'};
+let wordDuelAudience='guest';
+let currentDifficulty='guest';
+let editorDifficulty='guest';
+let leaderboardDifficulty='guest';
+let activeGameDifficulty='guest';
+let words=loadWords(currentDifficulty);
 let currentMode='';
 let vocabMode='syn'; 
 let gameState={};
 
-function loadWords(){ try{const s=localStorage.getItem('wordlist');if(s)return JSON.parse(s);}catch(e){} return DEFAULT_WORDS.map(w=>({...w})); }
-function saveWords(list){ localStorage.setItem('wordlist',JSON.stringify(list)); words=list; }
+function loadWords(difficulty=currentDifficulty){
+  const valid=WORD_DIFFICULTIES.includes(difficulty)?difficulty:'guest';
+  try{
+    const saved=localStorage.getItem('wordlist:'+valid);
+    if(saved)return JSON.parse(saved);
+    if(valid==='guest'||valid==='medium'){
+      const legacy=localStorage.getItem('wordlist');
+      if(legacy)return JSON.parse(legacy);
+    }
+  }catch(e){}
+  return DEFAULT_WORDS.map(w=>({...w}));
+}
+function saveWords(list,difficulty=currentDifficulty){
+  const valid=WORD_DIFFICULTIES.includes(difficulty)?difficulty:'guest';
+  localStorage.setItem('wordlist:'+valid,JSON.stringify(list));
+  if(valid===currentDifficulty)words=list;
+}
+
+function setWordDuelAudience(role){
+  wordDuelAudience=role==='teacher'?'teacher':role==='student'?'student':'guest';
+  if(wordDuelAudience==='guest') currentDifficulty='guest';
+  else {
+    const saved=localStorage.getItem('wordduelDifficulty');
+    currentDifficulty=STUDENT_DIFFICULTIES.includes(saved)?saved:'medium';
+  }
+  leaderboardDifficulty=currentDifficulty;
+  words=loadWords(currentDifficulty);
+  renderDifficultyControls();
+}
+function setDifficulty(difficulty){
+  if(wordDuelAudience==='guest'||!STUDENT_DIFFICULTIES.includes(difficulty))return;
+  currentDifficulty=difficulty;
+  leaderboardDifficulty=difficulty;
+  localStorage.setItem('wordduelDifficulty',difficulty);
+  words=loadWords(difficulty);
+  renderDifficultyControls();
+  playSfx('click');
+}
+function renderDifficultyControls(){
+  const selector=document.getElementById('difficulty-selector');
+  const guest=document.getElementById('guest-difficulty');
+  if(selector){selector.hidden=wordDuelAudience==='guest';selector.style.display=wordDuelAudience==='guest'?'none':'flex';}
+  if(guest){guest.hidden=wordDuelAudience!=='guest';guest.style.display=wordDuelAudience==='guest'?'block':'none';}
+  STUDENT_DIFFICULTIES.forEach(d=>{
+    const button=document.getElementById('difficulty-'+d);
+    if(button)button.classList.toggle('active',currentDifficulty===d);
+  });
+}
+window.setWordDuelAudience=setWordDuelAudience;
+window.getWordDuelAudience=()=>wordDuelAudience;
+window.getCurrentDifficulty=()=>currentDifficulty;
+window.getEditorDifficulty=()=>editorDifficulty;
 
 function setVMode(m){
   vocabMode=m;
@@ -1521,7 +1579,7 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if(id==='leaderboard') renderLB();
-  if(id==='editor'){ words=loadWords(); renderEditor(); }
+  if(id==='editor'){ words=loadWords(editorDifficulty); renderEditor(); }
 }
 function goHome(){ clearTimers(); showScreen('home'); }
 function openHelpModal(){ document.getElementById('help-modal').classList.add('show'); }
@@ -1565,7 +1623,7 @@ function makeQuestion(pool){
 const MC_TOTAL=15,MC_TIME=15;
 
 function startGame(mode){
-  currentMode=mode; words=loadWords(); playSfx('click');
+  currentMode=mode; activeGameDifficulty=currentDifficulty; words=loadWords(activeGameDifficulty); playSfx('click');
   if(mode==='mc') startMC();
   else if(mode==='match') startMatch();
   else if(mode==='fill') startFill();
@@ -2162,7 +2220,8 @@ function endGame(mode){
   
   // NEW: Wrapped in t()
   document.getElementById('res-title').textContent=t(titles[mode]||'Done!');
-  document.getElementById('res-sub').textContent=mode==='streak' ? t(`Best streak: ${s.bestStreak}`) : t("Here's how you did");
+  const summary=mode==='streak' ? t(`Best streak: ${s.bestStreak}`) : t("Here's how you did");
+  document.getElementById('res-sub').textContent=`${summary} · ${DIFFICULTY_LABELS[activeGameDifficulty]}`;
   
   const incorrectCount=total!==null?total-correctCount:null;
   document.getElementById('res-score').textContent=s.score;
@@ -2172,7 +2231,7 @@ function endGame(mode){
   document.getElementById('res-acc').textContent=acc!==null?acc+'%':s.score+' pts';
   document.getElementById('res-name').value='';
   document.getElementById('save-toast').className='save-toast';
-  gameState._mode=mode; gameState._total=total; gameState._acc=acc;
+  gameState._mode=mode; gameState._total=total; gameState._acc=acc; gameState._difficulty=activeGameDifficulty;
   showScreen('results');
 }
 
@@ -2187,15 +2246,21 @@ function setLB(d){ localStorage.setItem('leaderboard',JSON.stringify(d)); }
 function saveScore(){
   const name=document.getElementById('res-name').value.trim()||'Anonymous';
   const lb=getLB();
-  lb.push({name,score:gameState.score,mode:gameState._mode,acc:gameState._acc,date:Date.now()});
-  lb.sort((a,b)=>b.score-a.score);
-  setLB(lb.slice(0,20));
+  const difficulty=gameState._difficulty||currentDifficulty;
+  lb.push({name,score:gameState.score,mode:gameState._mode,acc:gameState._acc,difficulty,date:Date.now()});
+  const current=lb.filter(item=>(item.difficulty||'guest')===difficulty).sort((a,b)=>b.score-a.score).slice(0,20);
+  setLB(lb.filter(item=>(item.difficulty||'guest')!==difficulty).concat(current));
   document.getElementById('save-toast').className='save-toast show';
   playSfx('correct');
 }
 
 function renderLB(){
-  const lb=getLB();
+  const allowed=wordDuelAudience==='guest'?['guest']:STUDENT_DIFFICULTIES;
+  if(!allowed.includes(leaderboardDifficulty))leaderboardDifficulty=allowed[0];
+  const tabs=document.getElementById('leaderboard-tabs');
+  tabs.innerHTML=allowed.map(d=>`<button class="difficulty-tab ${d===leaderboardDifficulty?'active':''}" onclick="setLeaderboardDifficulty('${d}')">${DIFFICULTY_LABELS[d]}</button>`).join('');
+  document.getElementById('leaderboard-context').textContent=DIFFICULTY_LABELS[leaderboardDifficulty]+' scores';
+  const lb=getLB().filter(item=>(item.difficulty||'guest')===leaderboardDifficulty).sort((a,b)=>b.score-a.score).slice(0,20);
   const list=document.getElementById('lb-list');
   if(!lb.length){list.innerHTML='<div class="lb-empty">No scores yet. Play a round!</div>';return;}
   const ml={mc:'Multiple Choice',match:'Matching',fill:'Fill in Blank',streak:'Streak',scramble:'Unscramble'};
@@ -2204,19 +2269,34 @@ function renderLB(){
     const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
     return `<div class="lb-row">
       <div class="lb-rank ${rc}">${medal}</div>
-      <div class="lb-name">${e.name}<div class="lb-mode">${ml[e.mode]||e.mode} · ${new Date(e.date).toLocaleDateString()}</div></div>
+      <div class="lb-name">${escHtml(e.name)}<div class="lb-mode">${ml[e.mode]||e.mode} · ${new Date(e.date).toLocaleDateString()}</div></div>
       <div class="lb-score">${e.score}</div>
     </div>`;
   }).join('');
 }
 
-function clearLB(){ if(confirm('Clear all scores?')){localStorage.removeItem('leaderboard');renderLB();} }
+function setLeaderboardDifficulty(difficulty){
+  const allowed=wordDuelAudience==='guest'?['guest']:STUDENT_DIFFICULTIES;
+  if(!allowed.includes(difficulty))return;
+  leaderboardDifficulty=difficulty;
+  renderLB();
+}
+
+function clearLB(){
+  if(confirm(`Clear ${DIFFICULTY_LABELS[leaderboardDifficulty]} scores?`)){
+    setLB(getLB().filter(item=>(item.difficulty||'guest')!==leaderboardDifficulty));
+    renderLB();
+  }
+}
 
 /* ══════════════════════════════════════════════
    WORD EDITOR
 ══════════════════════════════════════════════ */
 function renderEditor(){
-  const list=loadWords();
+  const tabs=document.getElementById('editor-tabs');
+  tabs.innerHTML=WORD_DIFFICULTIES.map(d=>`<button class="difficulty-tab ${d===editorDifficulty?'active':''}" onclick="setEditorDifficulty('${d}')">${DIFFICULTY_LABELS[d]} (${loadWords(d).length})</button>`).join('');
+  document.getElementById('editor-note').textContent=`Editing ${DIFFICULTY_LABELS[editorDifficulty]}. This list is stored and published separately.`;
+  const list=loadWords(editorDifficulty);
   document.getElementById('editor-body').innerHTML=list.map((w,i)=>`
     <tr data-idx="${i}">
       <td><input value="${escHtml(w.word)}" onchange="editorChange(${i},'word',this.value)"/></td>
@@ -2227,28 +2307,36 @@ function renderEditor(){
   document.getElementById('editor-toast').className='save-toast';
 }
 
+function setEditorDifficulty(difficulty){
+  if(!WORD_DIFFICULTIES.includes(difficulty))return;
+  editorDifficulty=difficulty;
+  words=loadWords(editorDifficulty);
+  renderEditor();
+  playSfx('click');
+}
+
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 function editorChange(i,field,val){
-  const d=loadWords(); d[i][field]=val; saveWords(d);
+  const d=loadWords(editorDifficulty); d[i][field]=val; saveWords(d,editorDifficulty);
 }
 function editorDel(i){
-  const d=loadWords(); d.splice(i,1); saveWords(d); renderEditor();
+  const d=loadWords(editorDifficulty); d.splice(i,1); saveWords(d,editorDifficulty); renderEditor();
 }
 function editorAddRow(){
-  const d=loadWords(); d.push({word:'',syn:'',ant:''}); saveWords(d); renderEditor();
+  const d=loadWords(editorDifficulty); d.push({word:'',syn:'',ant:''}); saveWords(d,editorDifficulty); renderEditor();
   setTimeout(()=>{ const rows=document.querySelectorAll('#editor-body tr');
     const last=rows[rows.length-1]; if(last)last.querySelector('input').focus(); },50);
 }
 function editorSave(){
   const rows=document.querySelectorAll('#editor-body tr'); const d=[];
-  const definitions=new Map(words.map(item=>[String(item.word||'').trim().toLowerCase(),item.def||'']));
+  const definitions=new Map(loadWords(editorDifficulty).map(item=>[String(item.word||'').trim().toLowerCase(),item.def||'']));
   rows.forEach(row=>{
     const ins=row.querySelectorAll('input');
     const word=ins[0].value.trim(),syn=ins[1].value.trim(),ant=ins[2].value.trim();
     if(word)d.push({word,syn,ant,def:definitions.get(word.toLowerCase())||''});
   });
-  saveWords(d);
+  saveWords(d,editorDifficulty);
   document.getElementById('editor-toast').className='save-toast show';
   setTimeout(()=>document.getElementById('editor-toast').className='save-toast',2200);
   playSfx('correct');
@@ -2256,7 +2344,7 @@ function editorSave(){
 
 /* ── DELETE ALL WORDS ── */
 function openDeleteAllModal(){
-  const list=loadWords();
+  const list=loadWords(editorDifficulty);
   document.getElementById('delete-count-label').textContent=list.length;
   document.getElementById('confirm-delete-modal').className='modal-overlay show';
 }
@@ -2264,7 +2352,7 @@ function closeDeleteAllModal(){
   document.getElementById('confirm-delete-modal').className='modal-overlay';
 }
 function confirmDeleteAll(){
-  saveWords([]);
+  saveWords([],editorDifficulty);
   closeDeleteAllModal();
   renderEditor();
   playSfx('wrong');
@@ -2379,7 +2467,7 @@ function handleUploadFile(input){
 
 function confirmUpload(){
   if(!pendingUploadWords||!pendingUploadWords.length)return;
-  saveWords(pendingUploadWords);
+  saveWords(pendingUploadWords,editorDifficulty);
   pendingUploadWords=null;
   closeUploadModal();
   renderEditor();
@@ -2391,14 +2479,14 @@ function exportWordList(){
     .replace(/[\t\r\n]+/g, ' ')
     .replace(/;/g, ',')
     .trim();
-  const lines = loadWords().map(item =>
+  const lines = loadWords(editorDifficulty).map(item =>
     `${clean(item.word)};\t${clean(item.syn)};\t${clean(item.ant)};\t${clean(item.def)};`
   );
   const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type:'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'EHSAN_WordDuel_WordList.txt';
+  link.download = `EHSAN_WordDuel_${DIFFICULTY_LABELS[editorDifficulty].replace(/\s+/g,'_')}_WordList.txt`;
   document.body.appendChild(link);
   link.click();
   link.remove();
