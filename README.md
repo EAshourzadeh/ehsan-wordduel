@@ -1,8 +1,8 @@
 # EHSAN WordDuel
 
-EHSAN WordDuel is a browser-based vocabulary game for practising English synonyms, antonyms, spelling, pronunciation, and active recall.
+EHSAN WordDuel is a browser-based, language-flexible vocabulary game for practising synonyms, antonyms, spelling, and active recall.
 
-The application supports guests, students, and teachers. Students can practise with Easy, Medium, or Hard vocabulary, while teachers manage every word list and student account through Firebase-backed tools.
+The application supports guests, students, and teachers. Students can practise with Easy, Medium, or Hard vocabulary, while teachers manage every word list and student account through Firebase-backed tools. Teachers may upload vocabulary in any language or writing system supported by the browser.
 
 [Open the live app](https://ehsan-wordduel.learninglabs.workers.dev/)
 
@@ -16,7 +16,7 @@ The application supports guests, students, and teachers. Students can practise w
 - Student registration and sign-in with Firebase Authentication
 - Teacher-only vocabulary and user management
 - Word-list import and export using text files
-- Built-in English pronunciation using the Web Speech API
+- Optional text-to-speech pronunciation using the Web Speech API
 - English, Spanish, Russian, Persian, and Turkish interface options
 - Optional sound effects and background music
 - Responsive layout for desktop and mobile browsers
@@ -31,6 +31,19 @@ The application supports guests, students, and teachers. Students can practise w
 | Fill in the Blank | Type the correct synonym or antonym. |
 | Streak Mode | Continue answering until the streak ends. |
 | Unscramble | Rebuild a vocabulary word from shuffled letters. |
+
+## Language Support
+
+WordDuel is not limited to English vocabulary. A teacher can replace the supplied lists with words, synonyms, antonyms, and definitions in another language. UTF-8 imports support Latin, Cyrillic, Persian/Arabic, and other browser-supported scripts.
+
+The vocabulary language and interface language are independent:
+
+- The interface can be displayed in English, Spanish, Russian, Persian, or Turkish.
+- Each vocabulary list can contain content in any language.
+- Guest Default, Easy, Medium, and Hard can use the same language or different languages.
+- The game modes compare text and therefore do not require English content.
+
+The bundled vocabulary and the current text-to-speech configuration are English-oriented. Non-English word lists remain fully playable, but accurate pronunciation may require changing the speech language in `js/app.js` from the current `en-US` setting to the appropriate language code.
 
 ## Accounts and Access
 
@@ -260,6 +273,8 @@ The fields are:
 word<TAB>synonym<TAB>antonym<TAB>definition
 ```
 
+The labels describe each field's purpose, but the text itself may be written in any language. Save the import file as UTF-8 to preserve non-Latin characters correctly.
+
 Blank lines, missing fields, extra fields, or missing semicolons cause the import to be rejected. Exported files already use the correct format and can be edited before being imported again.
 
 Imports and exports affect only the currently selected teacher tab.
@@ -306,7 +321,7 @@ No server-side application process is required by the frontend host. Firebase pr
 
 ## Browser Support
 
-WordDuel works best in current versions of Chrome, Edge, Firefox, and Safari. Text-to-speech voice availability and pronunciation quality depend on the browser and operating system.
+WordDuel works best in current versions of Chrome, Edge, Firefox, and Safari. Unicode vocabulary is handled by the browser. Text-to-speech voice availability and pronunciation quality depend on the selected speech language, browser, and operating system.
 
 ## Contributing
 
