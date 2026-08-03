@@ -31,9 +31,21 @@ service cloud.firestore {
       allow write: if isTeacher();
     }
 
+    match /vocabulary/{difficulty} {
+      allow read: if difficulty == 'guest'
+        || (signedIn() && difficulty in ['easy', 'medium', 'hard']);
+      allow create, update: if isTeacher()
+        && difficulty in ['guest', 'easy', 'medium', 'hard']
+        && request.resource.data.difficulty == difficulty
+        && request.resource.data.words is list;
+      allow delete: if isTeacher()
+        && difficulty in ['guest', 'easy', 'medium', 'hard'];
+    }
+
     match /scores/{scoreId} {
       allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.difficulty in ['easy', 'medium', 'hard'];
       allow read, update, delete: if isTeacher();
     }
   }

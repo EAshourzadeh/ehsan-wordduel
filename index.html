@@ -70,6 +70,16 @@
     <button class="vocab-mode-btn"        id="vmode-ant" onclick="setVMode('ant')">Antonyms</button>
   </div>
 
+  <div class="difficulty-panel" aria-label="Word list difficulty">
+    <div class="difficulty-caption" id="difficulty-caption">Word list difficulty</div>
+    <div class="difficulty-selector" id="difficulty-selector">
+      <button class="difficulty-btn" id="difficulty-easy" onclick="setDifficulty('easy')">Easy</button>
+      <button class="difficulty-btn" id="difficulty-medium" onclick="setDifficulty('medium')">Medium</button>
+      <button class="difficulty-btn" id="difficulty-hard" onclick="setDifficulty('hard')">Hard</button>
+    </div>
+    <div class="guest-difficulty" id="guest-difficulty" hidden>Guest Default <span>Sign in to choose a difficulty</span></div>
+  </div>
+
   <div class="home-modes">
     <button class="mode-btn btn-mc"     onclick="startGame('mc')">
       <span class="icon">🎯</span>
@@ -286,6 +296,8 @@
     <span class="topbar-title" style="font-size:16px;font-weight:900">🏆 Leaderboard</span>
     <div></div>
   </div>
+  <div class="difficulty-tabs" id="leaderboard-tabs" aria-label="Leaderboard difficulty"></div>
+  <div class="difficulty-context" id="leaderboard-context"></div>
   <div class="lb-list" id="lb-list"></div>
   <button class="clear-lb-btn" id="clear-lb-btn" onclick="clearLB()" hidden>Clear All Scores</button>
 </div>
@@ -296,7 +308,8 @@
     <span class="topbar-title">✏️ Edit Word List</span>
     <div></div>
   </div>
-  <p class="editor-note">Add, edit, or remove synonym/antonym pairs. Changes are saved in the browser and apply to all game modes.</p>
+  <div class="difficulty-tabs editor-tabs" id="editor-tabs" aria-label="Word list to edit"></div>
+  <p class="editor-note" id="editor-note">Add, edit, or remove synonym/antonym pairs. Each tab is saved as a separate word list.</p>
   <div class="editor-table-wrap">
     <table class="word-table">
       <thead><tr><th>Word</th><th>Synonym</th><th>Antonym</th><th></th></tr></thead>
