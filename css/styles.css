@@ -22,6 +22,14 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 .vocab-mode-selector{display:flex;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:50px;padding:5px;width:100%;max-width:360px}
 .vocab-mode-btn{flex:1;padding:9px 0;border-radius:50px;font-size:13px;font-weight:700;color:var(--muted);background:none;transition:background .2s,color .2s}
 .vocab-mode-btn.active{background:var(--violet);color:#fff}
+.difficulty-panel{width:100%;max-width:360px;display:flex;flex-direction:column;gap:7px}
+.difficulty-caption,.difficulty-context{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.7px;text-transform:uppercase;text-align:center}
+.difficulty-selector,.difficulty-tabs{display:flex;gap:6px;width:100%;max-width:500px;background:var(--card);border:1px solid var(--border);border-radius:50px;padding:5px}
+.difficulty-selector[hidden],.guest-difficulty[hidden]{display:none!important}
+.difficulty-btn,.difficulty-tab{flex:1;padding:9px 10px;border-radius:50px;background:none;color:var(--muted);font-size:12px;font-weight:800;white-space:nowrap}
+.difficulty-btn.active,.difficulty-tab.active{background:var(--violet);color:#fff}
+.guest-difficulty{padding:11px 14px;border:1px solid var(--border);border-radius:50px;background:var(--card);font-size:13px;font-weight:800;color:var(--text)}
+.guest-difficulty span{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:500}
 
 .home-modes{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px}
 .mode-btn{padding:15px 22px;border-radius:var(--radius);font-size:15px;font-weight:700;display:flex;align-items:center;gap:14px;transition:transform .15s,box-shadow .15s;color:#fff}
@@ -182,6 +190,7 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 
 /* LEADERBOARD */
 #leaderboard{gap:14px}
+#leaderboard .difficulty-tabs{margin-top:-4px}
 .lb-list{width:100%;max-width:500px;display:flex;flex-direction:column;gap:8px}
 .lb-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px}
 .lb-rank{font-size:18px;font-weight:900;width:32px;text-align:center}
@@ -194,6 +203,8 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 
 /* EDITOR */
 #editor{gap:14px}
+.editor-tabs{max-width:600px;border-radius:14px;flex-wrap:wrap}
+.editor-tabs .difficulty-tab{min-width:105px;border-radius:10px}
 .editor-note{font-size:13px;color:var(--muted);text-align:center;max-width:500px;line-height:1.5}
 .editor-table-wrap{width:100%;max-width:600px;overflow-x:auto}
 table.word-table{width:100%;border-collapse:collapse;font-size:14px}
